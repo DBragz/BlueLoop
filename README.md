@@ -1,6 +1,6 @@
-# TikTok-style AT Protocol Video Platform
+# BlueLoop
 
-A video sharing platform built on Bluesky's AT Protocol, allowing users to share and discover short-form videos while leveraging the decentralized social network capabilities of the AT Protocol.
+A TikTok-style video sharing platform built on Bluesky's AT Protocol, allowing users to share and discover short-form videos while leveraging the decentralized social network capabilities of the AT Protocol.
 
 ## Features
 
