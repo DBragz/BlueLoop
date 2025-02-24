@@ -23,11 +23,6 @@ A TikTok-style video sharing platform built on Bluesky's AT Protocol, allowing u
 - **Authentication**: AT Protocol
 - **Database**: PostgreSQL + Drizzle ORM
 
-## Authors
-
-- DBragz - Project Creator
-- Replit AI - Editor
-
 ## Getting Started
 
 1. Clone the repository
