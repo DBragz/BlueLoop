@@ -56,6 +56,11 @@ A TikTok-style video sharing platform built on Bluesky's AT Protocol, allowing u
 
 Contributions are welcome! Please feel free to submit a Pull Request.
 
+## Authors
+
+- [Daniel Ribeirinha-Braga](https://github.com/DBragz)
+- [Editor](https://github.com/replit) - AI Code Assistant
+
 ## License
 
 MIT
