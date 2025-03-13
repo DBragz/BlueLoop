@@ -73,6 +73,8 @@ The application will be available at `http://localhost:5000`.
    - We recommend using managed services like Neon for better scalability
    - Minimum 2GB RAM, 10GB storage recommended
    - Enable connection pooling for better performance
+   - Configure automatic backups
+   - Set up read replicas for high-traffic scenarios
 
 2. Environment Configuration
    ```env
@@ -89,6 +91,14 @@ The application will be available at `http://localhost:5000`.
    PGDATABASE=your_db_name
    ```
 
+### Security Best Practices
+1. Enable SSL/TLS for database connections
+2. Use strong passwords and rotate them regularly
+3. Configure rate limiting for API endpoints
+4. Enable CORS with specific origins
+5. Set secure HTTP headers
+6. Keep dependencies updated
+
 ### Deployment Steps
 
 1. Prepare for Production
@@ -104,6 +114,9 @@ The application will be available at `http://localhost:5000`.
    ```bash
    # Push the schema to production database
    NODE_ENV=production npm run db:push
+
+   # Verify database connection
+   NODE_ENV=production npm run check
    ```
 
 3. Start the Production Server
@@ -119,6 +132,33 @@ The application will be available at `http://localhost:5000`.
 3. Click on "Deploy" in your Replit workspace
 4. Your application will be available at `your-app-name.username.repl.co`
 
+### Scaling Considerations
+
+1. Database Scaling
+   - Implement connection pooling
+   - Use read replicas for heavy read operations
+   - Consider sharding for large datasets
+   - Enable query caching
+
+2. Application Scaling
+   - Use load balancers for multiple instances
+   - Implement caching strategies
+   - Optimize static asset delivery
+   - Consider using CDN for media content
+
+### Backup and Recovery
+
+1. Database Backups
+   - Set up automated daily backups
+   - Store backups in multiple locations
+   - Regular backup testing and validation
+   - Document recovery procedures
+
+2. Application State
+   - Version control all configurations
+   - Maintain deployment history
+   - Document rollback procedures
+
 ### Monitoring and Maintenance
 
 The application includes detailed logging for:
@@ -131,6 +171,31 @@ Monitor these logs through:
 - Replit's console for deployed applications
 - Application logs in `npm run start` output
 - Database logs in your database provider's dashboard
+
+### Troubleshooting Production Issues
+
+1. Connection Issues
+   ```bash
+   # Check database connectivity
+   npm run check
+
+   # Verify environment variables
+   echo $DATABASE_URL
+
+   # Test network connectivity
+   nc -zv $PGHOST $PGPORT
+   ```
+
+2. Performance Issues
+   - Check server resource usage
+   - Monitor database query performance
+   - Review application logs for bottlenecks
+   - Analyze slow API endpoints
+
+3. Memory Leaks
+   - Monitor Node.js heap usage
+   - Check for connection leaks
+   - Review resource cleanup
 
 ## Development Guidelines
 
@@ -148,16 +213,22 @@ Common issues and solutions:
    - Verify PostgreSQL is running
    - Check DATABASE_URL format
    - Ensure database exists
+   - Verify network connectivity
+   - Check firewall settings
 
 2. **Build Errors**
    - Clear node_modules: `rm -rf node_modules`
    - Reinstall dependencies: `npm install`
    - Verify Node.js version
+   - Check for TypeScript errors
+   - Review build logs
 
 3. **Video Upload Issues**
    - Check file size (max 50MB)
    - Verify supported formats (MP4 recommended)
    - Check browser console for errors
+   - Verify storage permissions
+   - Monitor upload progress
 
 ## Contributing
 
