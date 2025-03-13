@@ -1,6 +1,5 @@
 import { useInfiniteQuery } from "@tanstack/react-query";
 import { VideoPlayer } from "./video-player";
-import { PostActions } from "./post-actions";
 import { useInView } from "react-intersection-observer";
 import { useState, useEffect } from "react";
 import type { Video } from "@shared/schema";
@@ -26,13 +25,16 @@ export function VideoFeed() {
     queryKey: ["/api/videos"],
     initialPageParam: 0,
     queryFn: async ({ pageParam }) => {
+      console.log("Fetching videos with offset:", pageParam);
       const res = await fetch(`/api/videos?offset=${pageParam}&limit=5`, {
         credentials: 'include'
       });
       if (!res.ok) {
         throw new Error("Failed to fetch videos");
       }
-      return res.json();
+      const data = await res.json();
+      console.log("Fetched videos:", data);
+      return data;
     },
     getNextPageParam: (lastPage, pages) => {
       if (!lastPage?.videos?.length) return undefined;
@@ -46,7 +48,6 @@ export function VideoFeed() {
     }
   }, [inView, hasNextPage, isFetching, fetchNextPage]);
 
-  // Track visible videos to manage playback
   useEffect(() => {
     const observer = new IntersectionObserver(
       (entries) => {
@@ -55,11 +56,12 @@ export function VideoFeed() {
             const index = Number(entry.target.getAttribute('data-index'));
             if (!isNaN(index)) {
               setCurrentVideoIndex(index);
+              console.log("Video in view:", index);
             }
           }
         });
       },
-      { threshold: 0.7 } // Increased threshold for better playback control
+      { threshold: 0.7 }
     );
 
     const videos = document.querySelectorAll('.video-container');
@@ -80,6 +82,14 @@ export function VideoFeed() {
 
   const allVideos = data?.pages.flatMap(page => page.videos) ?? [];
 
+  if (allVideos.length === 0) {
+    return (
+      <div className="flex items-center justify-center h-screen">
+        <p className="text-muted-foreground">No videos available</p>
+      </div>
+    );
+  }
+
   return (
     <div className="snap-y snap-mandatory h-screen overflow-y-scroll">
       {allVideos.map((video: Video, index: number) => (
@@ -95,7 +105,6 @@ export function VideoFeed() {
               thumbnail={video.thumbnail || "https://images.unsplash.com/photo-1611162616475-46b635cb6868"}
               isVisible={currentVideoIndex === index}
             />
-            <PostActions video={video} />
           </div>
         </div>
       ))}
