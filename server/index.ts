@@ -1,6 +1,8 @@
 import express, { type Request, Response, NextFunction } from "express";
 import { registerRoutes } from "./routes";
 import { setupVite, serveStatic, log } from "./vite";
+import { db } from "./db";
+import { users } from "@shared/schema";
 
 const app = express();
 app.use(express.json());
@@ -37,24 +39,36 @@ app.use((req, res, next) => {
 });
 
 (async () => {
-  const server = await registerRoutes(app);
+  try {
+    log("Starting server initialization...");
 
-  app.use((err: any, _req: Request, res: Response, _next: NextFunction) => {
-    const status = err.status || err.statusCode || 500;
-    const message = err.message || "Internal Server Error";
+    // Test database connectivity
+    log("Testing database connection...");
+    await db.select().from(users).limit(1);
+    log("Database connection successful");
 
-    res.status(status).json({ message });
-    throw err;
-  });
+    log("Registering routes...");
+    const server = await registerRoutes(app);
+    log("Routes registered successfully");
 
-  if (app.get("env") === "development") {
-    await setupVite(app, server);
-  } else {
+    app.use((err: any, _req: Request, res: Response, _next: NextFunction) => {
+      const status = err.status || err.statusCode || 500;
+      const message = err.message || "Internal Server Error";
+      log(`Error: ${message}`); 
+      res.status(status).json({ message });
+    });
+
+    // Temporarily use serveStatic for debugging
+    log("Setting up static file serving...");
     serveStatic(app);
-  }
+    log("Static file serving configured");
 
-  const port = process.env.PORT || 5000;
-  server.listen(port, () => {
-    log(`serving on port ${port}`);
-  });
+    const port = process.env.PORT || 5000;
+    server.listen(port, () => {
+      log(`Server successfully started and listening on port ${port}`);
+    });
+  } catch (error) {
+    log(`Startup error: ${error instanceof Error ? error.message : String(error)}`);
+    process.exit(1);
+  }
 })();

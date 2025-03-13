@@ -26,19 +26,17 @@ export async function loginWithBsky(identifier: string, password: string) {
 
 export async function uploadVideo(file: File, caption: string) {
   try {
-    // Create a temporary URL for the uploaded file
-    const fileUrl = URL.createObjectURL(file);
+    // Create FormData to send the file
+    const formData = new FormData();
+    formData.append('video', file);
+    formData.append('caption', caption);
+    formData.append('cid', `video-${Date.now()}`);
+    formData.append('mimeType', file.type);
 
     const response = await fetch("/api/videos", {
       method: "POST",
-      headers: { "Content-Type": "application/json" },
       credentials: 'include',
-      body: JSON.stringify({
-        uri: fileUrl,
-        cid: `video-${Date.now()}`,
-        caption,
-        thumbnail: null
-      })
+      body: formData
     });
 
     if (!response.ok) {

@@ -19,16 +19,19 @@ export const videos = pgTable("videos", {
   cid: text("cid").notNull(),
   caption: text("caption"),
   thumbnail: text("thumbnail"),
+  content: text("content"), // Store as base64 encoded text
+  mimeType: text("mime_type"),
   createdAt: timestamp("created_at").defaultNow(),
 });
 
-export const insertUserSchema = createInsertSchema(users).omit({ 
-  id: true 
+// Create schemas excluding auto-generated fields
+export const insertUserSchema = createInsertSchema(users, {
+  id: undefined
 });
 
-export const insertVideoSchema = createInsertSchema(videos).omit({ 
-  id: true,
-  createdAt: true 
+export const insertVideoSchema = createInsertSchema(videos, {
+  id: undefined,
+  createdAt: undefined
 });
 
 export type InsertUser = z.infer<typeof insertUserSchema>;

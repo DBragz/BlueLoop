@@ -1,8 +1,22 @@
-import type { Express } from "express";
+import type { Express, Request } from "express";
 import { createServer } from "http";
 import { storage } from "./storage";
 import { BskyAgent } from "@atproto/api";
-import { insertUserSchema, insertVideoSchema } from "@shared/schema";
+import { insertUserSchema } from "@shared/schema";
+import multer from 'multer';
+
+// Configure multer for memory storage
+const upload = multer({ 
+  storage: multer.memoryStorage(),
+  limits: {
+    fileSize: 50 * 1024 * 1024 // 50MB limit
+  }
+});
+
+// Add type for multer request
+interface MulterRequest extends Request {
+  file?: Express.Multer.File;
+}
 
 export async function registerRoutes(app: Express) {
   const httpServer = createServer(app);
@@ -48,11 +62,52 @@ export async function registerRoutes(app: Express) {
     }
   });
 
-  app.post("/api/videos", async (req, res) => {
+  app.get("/api/videos/:id/content", async (req, res) => {
     try {
-      const videoData = insertVideoSchema.parse(req.body);
+      const video = await storage.getVideo(parseInt(req.params.id));
+      if (!video || !video.content) {
+        return res.status(404).json({ message: "Video not found" });
+      }
+
+      // Convert base64 back to binary
+      const videoBuffer = Buffer.from(video.content, 'base64');
+      res.setHeader('Content-Type', video.mimeType || 'video/mp4');
+      res.send(videoBuffer);
+    } catch (error) {
+      console.error("Error streaming video:", error);
+      res.status(500).json({ message: "Failed to stream video" });
+    }
+  });
+
+  app.post("/api/videos", upload.single('video'), async (req: MulterRequest, res) => {
+    try {
+      if (!req.file) {
+        return res.status(400).json({ message: "No video file uploaded" });
+      }
+
+      console.log("Received video upload:", {
+        filename: req.file.originalname,
+        mimetype: req.file.mimetype,
+        size: req.file.size
+      });
+
+      const videoData = {
+        uri: `/api/videos/${Date.now()}/content`, // Will be replaced with actual ID
+        cid: req.body.cid,
+        caption: req.body.caption,
+        content: req.file.buffer.toString('base64'), // Convert to base64
+        mimeType: req.file.mimetype,
+        thumbnail: null
+      };
+
       const video = await storage.createVideo(videoData);
-      res.json({ video });
+
+      // Update the URI with the actual video ID
+      const updatedUri = `/api/videos/${video.id}/content`;
+      await storage.updateVideoUri(video.id, updatedUri);
+
+      console.log("Video successfully created:", { id: video.id, uri: updatedUri });
+      res.json({ video: { ...video, uri: updatedUri } });
     } catch (error) {
       console.error("Error creating video:", error);
       res.status(400).json({ message: "Invalid video data" });

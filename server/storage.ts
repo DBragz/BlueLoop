@@ -9,7 +9,9 @@ export interface IStorage {
   createUser(user: InsertUser): Promise<User>;
   updateUserTokens(id: number, accessJwt: string, refreshJwt: string): Promise<void>;
   getVideos(offset: number, limit: number): Promise<Video[]>;
+  getVideo(id: number): Promise<Video | undefined>;
   createVideo(video: InsertVideo): Promise<Video>;
+  updateVideoUri(id: number, uri: string): Promise<void>;
 }
 
 export class DatabaseStorage implements IStorage {
@@ -47,12 +49,34 @@ export class DatabaseStorage implements IStorage {
       .offset(offset);
   }
 
-  async createVideo(insertVideo: InsertVideo): Promise<Video> {
+  async getVideo(id: number): Promise<Video | undefined> {
     const [video] = await db
-      .insert(videos)
-      .values(insertVideo)
-      .returning();
+      .select()
+      .from(videos)
+      .where(eq(videos.id, id));
     return video;
+  }
+
+  async createVideo(video: InsertVideo): Promise<Video> {
+    const [newVideo] = await db
+      .insert(videos)
+      .values({
+        uri: video.uri,
+        cid: video.cid,
+        caption: video.caption,
+        thumbnail: video.thumbnail,
+        content: video.content,
+        mimeType: video.mimeType
+      })
+      .returning();
+    return newVideo;
+  }
+
+  async updateVideoUri(id: number, uri: string): Promise<void> {
+    await db
+      .update(videos)
+      .set({ uri })
+      .where(eq(videos.id, id));
   }
 }
 
