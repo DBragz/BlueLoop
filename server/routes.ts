@@ -50,11 +50,14 @@ export async function registerRoutes(app: Express) {
   });
 
   app.get("/api/videos", async (req, res) => {
-    const offset = parseInt(req.query.offset as string) || 0;
-    const limit = parseInt(req.query.limit as string) || 10;
-
     try {
+      const offset = parseInt(req.query.offset as string) || 0;
+      const limit = parseInt(req.query.limit as string) || 10;
+
+      console.log(`Fetching videos with offset ${offset} and limit ${limit}`);
       const videos = await storage.getVideos(offset, limit);
+      console.log(`Found ${videos.length} videos`);
+
       res.json({ videos });
     } catch (error) {
       console.error("Error fetching videos:", error);
@@ -63,18 +66,41 @@ export async function registerRoutes(app: Express) {
   });
 
   app.get("/api/videos/:id/content", async (req, res) => {
+    const videoId = parseInt(req.params.id);
+    console.log(`Attempting to stream video ID: ${videoId}`);
+
     try {
-      const video = await storage.getVideo(parseInt(req.params.id));
-      if (!video || !video.content) {
+      const video = await storage.getVideo(videoId);
+
+      if (!video) {
+        console.error(`Video not found for ID: ${videoId}`);
         return res.status(404).json({ message: "Video not found" });
       }
 
-      // Convert base64 back to binary
+      if (!video.content) {
+        console.error(`No content found for video ID: ${videoId}`);
+        return res.status(404).json({ message: "Video content not found" });
+      }
+
+      // Convert base64 to buffer
       const videoBuffer = Buffer.from(video.content, 'base64');
+      console.log(`Video buffer created for ID ${videoId}, size: ${videoBuffer.length} bytes`);
+
+      // Set proper content type and streaming headers
       res.setHeader('Content-Type', video.mimeType || 'video/mp4');
-      res.send(videoBuffer);
+      res.setHeader('Content-Length', videoBuffer.length);
+      res.setHeader('Accept-Ranges', 'bytes');
+      res.setHeader('Cache-Control', 'no-cache');
+      res.setHeader('Pragma', 'no-cache');
+      res.setHeader('Expires', '0');
+
+      // Stream the video
+      res.write(videoBuffer);
+      res.end();
+
+      console.log(`Successfully streamed video ID: ${videoId}`);
     } catch (error) {
-      console.error("Error streaming video:", error);
+      console.error(`Error streaming video ${videoId}:`, error);
       res.status(500).json({ message: "Failed to stream video" });
     }
   });
@@ -91,18 +117,17 @@ export async function registerRoutes(app: Express) {
         size: req.file.size
       });
 
+      // Create a test video for development
       const videoData = {
-        uri: `/api/videos/${Date.now()}/content`, // Will be replaced with actual ID
-        cid: req.body.cid,
-        caption: req.body.caption,
-        content: req.file.buffer.toString('base64'), // Convert to base64
-        mimeType: req.file.mimetype,
-        thumbnail: null
+        uri: `/api/videos/${Date.now()}/content`,
+        cid: req.body.cid || `video-${Date.now()}`,
+        caption: req.body.caption || "Test video",
+        content: req.file.buffer.toString('base64'),
+        mimeType: req.file.mimetype || 'video/mp4',
+        thumbnail: undefined
       };
 
       const video = await storage.createVideo(videoData);
-
-      // Update the URI with the actual video ID
       const updatedUri = `/api/videos/${video.id}/content`;
       await storage.updateVideoUri(video.id, updatedUri);
 

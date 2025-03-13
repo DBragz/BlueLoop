@@ -22,10 +22,11 @@ export function VideoPlayer({ src, thumbnail, isVisible }: VideoPlayerProps) {
       console.log("Video can play:", src);
       setIsLoading(false);
       if (isVisible) {
-        video.play().catch((err) => {
-          console.error("Video playback error:", err);
-          setError("Failed to play video. Please try again.");
-        });
+        try {
+          video.play();
+        } catch (err) {
+          console.error("Video play error:", err);
+        }
       }
     };
 
@@ -37,63 +38,32 @@ export function VideoPlayer({ src, thumbnail, isVisible }: VideoPlayerProps) {
     const handleError = (e: Event) => {
       const videoError = (e.target as HTMLVideoElement).error;
       console.error("Video error:", videoError?.message, "Code:", videoError?.code, "Source:", src);
-
-      let errorMessage = "Error loading video";
-      if (videoError) {
-        switch (videoError.code) {
-          case 1: //MediaError.MEDIA_ERR_ABORTED:
-            errorMessage = "Video loading was aborted";
-            break;
-          case 2: //MediaError.MEDIA_ERR_NETWORK:
-            errorMessage = "Network error occurred while loading video";
-            break;
-          case 3: //MediaError.MEDIA_ERR_DECODE:
-            errorMessage = "Video decoding failed";
-            break;
-          case 4: //MediaError.MEDIA_ERR_SRC_NOT_SUPPORTED:
-            errorMessage = "Video format not supported. Please try a different format (MP4/H.264 recommended)";
-            break;
-        }
-      }
-      setError(errorMessage);
+      setError(`Failed to load video. Please try again. Error: ${videoError?.message}`);
       setIsLoading(false);
     };
 
-    // Reset states when src changes
+    // Reset states when mounting or src changes
     setError(null);
     setIsLoading(true);
 
+    // Add event listeners
     video.addEventListener("canplay", handleCanPlay);
-    video.addEventListener("error", handleError);
     video.addEventListener("loadeddata", handleLoadedData);
+    video.addEventListener("error", handleError);
 
-    // Load or pause video based on visibility
+    // Initial load
     if (isVisible) {
+      console.log("Loading video:", src);
       video.load();
-      video.play().catch((err) => {
-        console.error("Initial playback error:", err);
-        // Some browsers require user interaction, so we'll just log this
-        // and let the canplay handler try again
-      });
-    } else {
-      video.pause();
     }
 
     return () => {
       video.removeEventListener("canplay", handleCanPlay);
-      video.removeEventListener("error", handleError);
       video.removeEventListener("loadeddata", handleLoadedData);
+      video.removeEventListener("error", handleError);
       video.pause();
     };
   }, [isVisible, src]);
-
-  if (error) {
-    return (
-      <Card className="relative aspect-[9/16] w-full overflow-hidden bg-muted flex items-center justify-center">
-        <p className="text-destructive text-center px-4">{error}</p>
-      </Card>
-    );
-  }
 
   return (
     <Card className="relative aspect-[9/16] w-full overflow-hidden">
@@ -102,15 +72,18 @@ export function VideoPlayer({ src, thumbnail, isVisible }: VideoPlayerProps) {
           <Loader2 className="h-8 w-8 animate-spin text-primary" />
         </div>
       )}
+      {error && (
+        <div className="absolute inset-0 flex items-center justify-center bg-background/80">
+          <p className="text-destructive text-center px-4">{error}</p>
+        </div>
+      )}
       <video
         ref={videoRef}
         src={src}
         poster={thumbnail}
-        loop
-        muted
+        controls
         playsInline
         preload="auto"
-        crossOrigin="anonymous"
         className="h-full w-full object-cover"
       />
     </Card>
