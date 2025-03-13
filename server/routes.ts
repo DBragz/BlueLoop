@@ -5,11 +5,11 @@ import { BskyAgent } from "@atproto/api";
 import { insertUserSchema } from "@shared/schema";
 import multer from 'multer';
 
-// Configure multer for memory storage
+// Configure multer for memory storage with increased size limit
 const upload = multer({ 
   storage: multer.memoryStorage(),
   limits: {
-    fileSize: 50 * 1024 * 1024 // 50MB limit
+    fileSize: 100 * 1024 * 1024 // 100MB limit
   }
 });
 
@@ -52,7 +52,7 @@ export async function registerRoutes(app: Express) {
   app.get("/api/videos", async (req, res) => {
     try {
       const offset = parseInt(req.query.offset as string) || 0;
-      const limit = parseInt(req.query.limit as string) || 10;
+      const limit = parseInt(req.query.limit as string) || 5;
 
       console.log(`Fetching videos with offset ${offset} and limit ${limit}`);
       const videos = await storage.getVideos(offset, limit);
