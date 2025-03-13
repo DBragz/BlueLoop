@@ -26,8 +26,8 @@ export async function loginWithBsky(identifier: string, password: string) {
 
 export async function uploadVideo(file: File, caption: string) {
   try {
-    // For testing purposes, using a reliable sample video URL
-    const demoVideoUrl = "https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/BigBuckBunny.mp4";
+    // Using a widely supported video format from a reliable CDN
+    const demoVideoUrl = "https://cdn.plyr.io/static/demo/View_From_A_Blue_Moon_Trailer-HD.mp4";
 
     const response = await fetch("/api/videos", {
       method: "POST",

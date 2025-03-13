@@ -51,7 +51,7 @@ export function VideoPlayer({ src, thumbnail, isVisible }: VideoPlayerProps) {
             errorMessage = "Video decoding failed";
             break;
           case 4: //MediaError.MEDIA_ERR_SRC_NOT_SUPPORTED:
-            errorMessage = "Video format not supported";
+            errorMessage = "Video format not supported. Please try a different format (MP4/H.264 recommended)";
             break;
         }
       }
