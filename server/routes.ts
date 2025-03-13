@@ -9,13 +9,13 @@ export async function registerRoutes(app: Express) {
 
   app.post("/api/auth/login", async (req, res) => {
     const { identifier, password } = req.body;
-    
+
     try {
       const agent = new BskyAgent({ service: "https://bsky.social" });
       const response = await agent.login({ identifier, password });
-      
+
       const { accessJwt, refreshJwt, did, handle } = response.data;
-      
+
       const userData = {
         username: handle,
         did,
@@ -24,12 +24,13 @@ export async function registerRoutes(app: Express) {
         handle,
         avatar: response.data.handle
       };
-      
+
       const validatedUser = insertUserSchema.parse(userData);
       const user = await storage.createUser(validatedUser);
-      
+
       res.json({ user });
     } catch (error) {
+      console.error("Login error:", error);
       res.status(401).json({ message: "Authentication failed" });
     }
   });
@@ -37,11 +38,12 @@ export async function registerRoutes(app: Express) {
   app.get("/api/videos", async (req, res) => {
     const offset = parseInt(req.query.offset as string) || 0;
     const limit = parseInt(req.query.limit as string) || 10;
-    
+
     try {
       const videos = await storage.getVideos(offset, limit);
       res.json({ videos });
     } catch (error) {
+      console.error("Error fetching videos:", error);
       res.status(500).json({ message: "Failed to fetch videos" });
     }
   });
@@ -52,6 +54,7 @@ export async function registerRoutes(app: Express) {
       const video = await storage.createVideo(videoData);
       res.json({ video });
     } catch (error) {
+      console.error("Error creating video:", error);
       res.status(400).json({ message: "Invalid video data" });
     }
   });

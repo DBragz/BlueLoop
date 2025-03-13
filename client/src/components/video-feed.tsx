@@ -11,7 +11,7 @@ interface VideoResponse {
 
 export function VideoFeed() {
   const [currentVideoIndex, setCurrentVideoIndex] = useState(0);
-  const { ref, inView } = useInView({
+  const { ref, inView, entry } = useInView({
     threshold: 0.5,
   });
 
@@ -19,25 +19,64 @@ export function VideoFeed() {
     data,
     fetchNextPage,
     hasNextPage,
-    isFetching
+    isFetching,
+    isError,
+    error
   } = useInfiniteQuery<VideoResponse>({
     queryKey: ["/api/videos"],
     initialPageParam: 0,
     queryFn: async ({ pageParam }) => {
-      const res = await fetch(`/api/videos?offset=${pageParam}&limit=5`);
+      const res = await fetch(`/api/videos?offset=${pageParam}&limit=5`, {
+        credentials: 'include'
+      });
+      if (!res.ok) {
+        throw new Error("Failed to fetch videos");
+      }
       return res.json();
     },
     getNextPageParam: (lastPage, pages) => {
-      if (!lastPage) return undefined;
+      if (!lastPage?.videos?.length) return undefined;
       return lastPage.videos.length === 5 ? pages.length * 5 : undefined;
     },
   });
 
   useEffect(() => {
-    if (inView && hasNextPage && !isFetching) {
+    if (entry?.isIntersecting && hasNextPage && !isFetching) {
       fetchNextPage();
     }
-  }, [inView, hasNextPage, isFetching, fetchNextPage]);
+  }, [entry?.isIntersecting, hasNextPage, isFetching, fetchNextPage]);
+
+  // Handle intersection to update current video
+  useEffect(() => {
+    const observer = new IntersectionObserver(
+      (entries) => {
+        entries.forEach((entry) => {
+          if (entry.isIntersecting) {
+            const index = Number(entry.target.getAttribute('data-index'));
+            if (!isNaN(index)) {
+              setCurrentVideoIndex(index);
+            }
+          }
+        });
+      },
+      { threshold: 0.5 }
+    );
+
+    const videos = document.querySelectorAll('.video-container');
+    videos.forEach((video) => observer.observe(video));
+
+    return () => {
+      videos.forEach((video) => observer.unobserve(video));
+    };
+  }, [data]);
+
+  if (isError) {
+    return (
+      <div className="flex items-center justify-center h-screen">
+        <p className="text-destructive">Error loading videos: {error.message}</p>
+      </div>
+    );
+  }
 
   const allVideos = data?.pages.flatMap(page => page.videos) ?? [];
 
@@ -47,7 +86,8 @@ export function VideoFeed() {
         <div
           key={video.id}
           ref={index === allVideos.length - 1 ? ref : undefined}
-          className="snap-start h-screen w-full flex items-center justify-center relative"
+          data-index={index}
+          className="video-container snap-start h-screen w-full flex items-center justify-center relative"
         >
           <div className="w-full max-w-md mx-auto relative">
             <VideoPlayer
@@ -59,6 +99,11 @@ export function VideoFeed() {
           </div>
         </div>
       ))}
+      {isFetching && (
+        <div className="flex justify-center p-4">
+          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
+        </div>
+      )}
     </div>
   );
 }
