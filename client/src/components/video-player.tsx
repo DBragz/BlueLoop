@@ -29,12 +29,6 @@ export function VideoPlayer({ src, thumbnail, isVisible }: VideoPlayerProps) {
       }
     };
 
-    const handleError = () => {
-      console.error("Video error for source:", src);
-      setError("Error loading video");
-      setIsLoading(false);
-    };
-
     const handleLoadedData = () => {
       console.log("Video data loaded:", src);
       setIsLoading(false);
@@ -45,7 +39,11 @@ export function VideoPlayer({ src, thumbnail, isVisible }: VideoPlayerProps) {
     setIsLoading(true);
 
     video.addEventListener("canplay", handleCanPlay);
-    video.addEventListener("error", handleError);
+    video.addEventListener("error", () => {
+      console.error("Video error for source:", src);
+      setError("Error loading video");
+      setIsLoading(false);
+    });
     video.addEventListener("loadeddata", handleLoadedData);
 
     // Load or pause video based on visibility
@@ -62,7 +60,11 @@ export function VideoPlayer({ src, thumbnail, isVisible }: VideoPlayerProps) {
 
     return () => {
       video.removeEventListener("canplay", handleCanPlay);
-      video.removeEventListener("error", handleError);
+      video.removeEventListener("error", () => {
+      console.error("Video error for source:", src);
+      setError("Error loading video");
+      setIsLoading(false);
+    });
       video.removeEventListener("loadeddata", handleLoadedData);
       video.pause();
     };
