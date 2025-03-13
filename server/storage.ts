@@ -1,4 +1,7 @@
 import { users, videos, type User, type InsertUser, type Video, type InsertVideo } from "@shared/schema";
+import { db } from "./db";
+import { eq } from "drizzle-orm";
+import { desc } from "drizzle-orm";
 
 export interface IStorage {
   getUser(id: number): Promise<User | undefined>;
@@ -9,66 +12,48 @@ export interface IStorage {
   createVideo(video: InsertVideo): Promise<Video>;
 }
 
-export class MemStorage implements IStorage {
-  private users: Map<number, User>;
-  private videos: Map<number, Video>;
-  private currentUserId: number;
-  private currentVideoId: number;
-
-  constructor() {
-    this.users = new Map();
-    this.videos = new Map();
-    this.currentUserId = 1;
-    this.currentVideoId = 1;
-  }
-
+export class DatabaseStorage implements IStorage {
   async getUser(id: number): Promise<User | undefined> {
-    return this.users.get(id);
+    const [user] = await db.select().from(users).where(eq(users.id, id));
+    return user;
   }
 
   async getUserByDid(did: string): Promise<User | undefined> {
-    return Array.from(this.users.values()).find(user => user.did === did);
+    const [user] = await db.select().from(users).where(eq(users.did, did));
+    return user;
   }
 
   async createUser(insertUser: InsertUser): Promise<User> {
-    const id = this.currentUserId++;
-    const user: User = { 
-      id, 
-      ...insertUser,
-      avatar: insertUser.avatar ?? null
-    };
-    this.users.set(id, user);
+    const [user] = await db
+      .insert(users)
+      .values(insertUser)
+      .returning();
     return user;
   }
 
   async updateUserTokens(id: number, accessJwt: string, refreshJwt: string): Promise<void> {
-    const user = await this.getUser(id);
-    if (!user) throw new Error("User not found");
-
-    const updatedUser = { ...user, accessJwt, refreshJwt };
-    this.users.set(id, updatedUser);
+    await db
+      .update(users)
+      .set({ accessJwt, refreshJwt })
+      .where(eq(users.id, id));
   }
 
   async getVideos(offset: number, limit: number): Promise<Video[]> {
-    return Array.from(this.videos.values())
-      .sort((a, b) => b.id - a.id)
-      .slice(offset, offset + limit);
+    return await db
+      .select()
+      .from(videos)
+      .orderBy(desc(videos.createdAt))
+      .limit(limit)
+      .offset(offset);
   }
 
   async createVideo(insertVideo: InsertVideo): Promise<Video> {
-    const id = this.currentVideoId++;
-    const video: Video = {
-      id,
-      caption: insertVideo.caption ?? null,
-      userId: insertVideo.userId ?? null,
-      uri: insertVideo.uri,
-      cid: insertVideo.cid,
-      thumbnail: insertVideo.thumbnail ?? null,
-      createdAt: new Date()
-    };
-    this.videos.set(id, video);
+    const [video] = await db
+      .insert(videos)
+      .values(insertVideo)
+      .returning();
     return video;
   }
 }
 
-export const storage = new MemStorage();
+export const storage = new DatabaseStorage();
