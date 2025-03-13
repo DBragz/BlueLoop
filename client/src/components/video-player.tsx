@@ -21,28 +21,26 @@ export function VideoPlayer({ src, thumbnail, isVisible }: VideoPlayerProps) {
     const handleCanPlay = () => {
       console.log("Video can play:", src);
       setIsLoading(false);
-      if (isVisible) {
-        try {
-          video.play();
-        } catch (err) {
-          console.error("Video play error:", err);
-        }
-      }
     };
 
     const handleLoadedData = () => {
       console.log("Video data loaded:", src);
       setIsLoading(false);
+      if (isVisible) {
+        video.play().catch(err => {
+          console.error("Initial play failed:", err);
+        });
+      }
     };
 
     const handleError = (e: Event) => {
       const videoError = (e.target as HTMLVideoElement).error;
       console.error("Video error:", videoError?.message, "Code:", videoError?.code, "Source:", src);
-      setError(`Failed to load video. Please try again. Error: ${videoError?.message}`);
+      setError(`Failed to load video: ${videoError?.message}`);
       setIsLoading(false);
     };
 
-    // Reset states when mounting or src changes
+    // Reset states
     setError(null);
     setIsLoading(true);
 
@@ -51,7 +49,7 @@ export function VideoPlayer({ src, thumbnail, isVisible }: VideoPlayerProps) {
     video.addEventListener("loadeddata", handleLoadedData);
     video.addEventListener("error", handleError);
 
-    // Initial load
+    // Load initial video
     if (isVisible) {
       console.log("Loading video:", src);
       video.load();

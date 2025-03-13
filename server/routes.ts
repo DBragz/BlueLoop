@@ -117,7 +117,7 @@ export async function registerRoutes(app: Express) {
         size: req.file.size
       });
 
-      // Create a test video for development
+      // Create video data
       const videoData = {
         uri: `/api/videos/${Date.now()}/content`,
         cid: req.body.cid || `video-${Date.now()}`,
