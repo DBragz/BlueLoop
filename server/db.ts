@@ -11,10 +11,26 @@ if (!process.env.DATABASE_URL) {
   );
 }
 
+const startTime = Date.now();
+console.log('Initializing database connection pool...');
+
 export const pool = new Pool({ connectionString: process.env.DATABASE_URL });
 export const db = drizzle(pool, { schema });
 
 // Test the connection on module load
 pool.connect()
-  .then(() => console.log('Database connection pool initialized'))
-  .catch(err => console.error('Failed to initialize database pool:', err));
+  .then(() => {
+    const duration = Date.now() - startTime;
+    console.log(`Database connection pool initialized successfully (took ${duration}ms)`);
+  })
+  .catch(err => {
+    console.error('Failed to initialize database pool:', err);
+    console.error('Connection error stack:', err.stack);
+    throw err; // Re-throw to ensure the error is caught by the main startup process
+  });
+
+// Add connection error handler
+pool.on('error', (err) => {
+  console.error('Unexpected database pool error:', err);
+  console.error('Pool error stack:', err.stack);
+});
