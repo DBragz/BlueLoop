@@ -1,4 +1,5 @@
 import { pgTable, text, serial, integer, timestamp } from "drizzle-orm/pg-core";
+import { type InferModel } from "drizzle-orm";
 import { createInsertSchema } from "drizzle-zod";
 import { z } from "zod";
 
@@ -24,17 +25,27 @@ export const videos = pgTable("videos", {
   createdAt: timestamp("created_at").defaultNow(),
 });
 
-// Create schemas excluding auto-generated fields
-export const insertUserSchema = createInsertSchema(users, {
-  id: undefined
+// Create schemas for insertion
+export const insertUserSchema = z.object({
+  username: z.string(),
+  did: z.string(),
+  accessJwt: z.string(),
+  refreshJwt: z.string(),
+  handle: z.string(),
+  avatar: z.string().optional(),
 });
 
-export const insertVideoSchema = createInsertSchema(videos, {
-  id: undefined,
-  createdAt: undefined
+export const insertVideoSchema = z.object({
+  userId: z.number().optional(),
+  uri: z.string(),
+  cid: z.string(),
+  caption: z.string().optional(),
+  thumbnail: z.string().optional(),
+  content: z.string().optional(),
+  mimeType: z.string().optional(),
 });
 
 export type InsertUser = z.infer<typeof insertUserSchema>;
 export type InsertVideo = z.infer<typeof insertVideoSchema>;
-export type User = typeof users.$inferSelect;
-export type Video = typeof videos.$inferSelect;
+export type User = InferModel<typeof users>;
+export type Video = InferModel<typeof videos>;

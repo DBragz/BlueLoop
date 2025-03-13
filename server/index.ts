@@ -58,10 +58,19 @@ app.use((req, res, next) => {
       res.status(status).json({ message });
     });
 
-    // Temporarily use serveStatic for debugging
-    log("Setting up static file serving...");
-    serveStatic(app);
-    log("Static file serving configured");
+    // Determine if we're in development mode
+    const isDevelopment = process.env.NODE_ENV !== "production";
+    log(`Running in ${isDevelopment ? "development" : "production"} mode`);
+
+    if (isDevelopment) {
+      log("Setting up Vite development server...");
+      await setupVite(app, server);
+      log("Vite development server configured");
+    } else {
+      log("Setting up static file serving...");
+      serveStatic(app);
+      log("Static file serving configured");
+    }
 
     const port = process.env.PORT || 5000;
     server.listen(port, () => {
