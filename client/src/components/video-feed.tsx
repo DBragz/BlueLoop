@@ -11,7 +11,7 @@ interface VideoResponse {
 
 export function VideoFeed() {
   const [currentVideoIndex, setCurrentVideoIndex] = useState(0);
-  const { ref, inView, entry } = useInView({
+  const { ref, inView } = useInView({
     threshold: 0.5,
   });
 
@@ -41,12 +41,12 @@ export function VideoFeed() {
   });
 
   useEffect(() => {
-    if (entry?.isIntersecting && hasNextPage && !isFetching) {
+    if (inView && hasNextPage && !isFetching) {
       fetchNextPage();
     }
-  }, [entry?.isIntersecting, hasNextPage, isFetching, fetchNextPage]);
+  }, [inView, hasNextPage, isFetching, fetchNextPage]);
 
-  // Handle intersection to update current video
+  // Track visible videos to manage playback
   useEffect(() => {
     const observer = new IntersectionObserver(
       (entries) => {
@@ -59,7 +59,7 @@ export function VideoFeed() {
           }
         });
       },
-      { threshold: 0.5 }
+      { threshold: 0.7 } // Increased threshold for better playback control
     );
 
     const videos = document.querySelectorAll('.video-container');
@@ -68,7 +68,7 @@ export function VideoFeed() {
     return () => {
       videos.forEach((video) => observer.unobserve(video));
     };
-  }, [data]);
+  }, [data?.pages]);
 
   if (isError) {
     return (
