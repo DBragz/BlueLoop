@@ -11,7 +11,7 @@ export default function Home() {
   const [isUploading, setIsUploading] = useState(false);
   const [videoFile, setVideoFile] = useState<File | null>(null);
   const [caption, setCaption] = useState("");
-  const [dialogOpen, setDialogOpen] = useState(false); // New state for dialog visibility
+  const [dialogOpen, setDialogOpen] = useState(false);
   const { toast } = useToast();
 
   const handleUpload = async () => {
@@ -25,6 +25,7 @@ export default function Home() {
         description: "Video uploaded successfully",
       });
       setDialogOpen(false); // Close the dialog after upload
+      window.location.reload(); // Refresh the page after upload
     } catch (error) {
       toast({
         variant: "destructive",

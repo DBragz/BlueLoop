@@ -1,4 +1,4 @@
-import { useRef, useEffect, useState } from "react";
+import { useRef, useState, useEffect } from "react";
 import { Card } from "@/components/ui/card";
 import { Loader2 } from "lucide-react";
 
@@ -26,16 +26,22 @@ export function VideoPlayer({ src, thumbnail, isVisible }: VideoPlayerProps) {
     const handleLoadedData = () => {
       console.log("Video data loaded:", src);
       setIsLoading(false);
-      if (isVisible) {
-        video.play().catch(err => {
-          console.error("Initial play failed:", err);
-        });
-      }
+      // Automatically play the video once it is loaded with sound off.
+      video.play().catch((err) => {
+        console.error("Initial play failed:", err);
+      });
     };
 
     const handleError = (e: Event) => {
       const videoError = (e.target as HTMLVideoElement).error;
-      console.error("Video error:", videoError?.message, "Code:", videoError?.code, "Source:", src);
+      console.error(
+        "Video error:",
+        videoError?.message,
+        "Code:",
+        videoError?.code,
+        "Source:",
+        src,
+      );
       setError(`Failed to load video: ${videoError?.message}`);
       setIsLoading(false);
     };
@@ -49,7 +55,7 @@ export function VideoPlayer({ src, thumbnail, isVisible }: VideoPlayerProps) {
     video.addEventListener("loadeddata", handleLoadedData);
     video.addEventListener("error", handleError);
 
-    // Load initial video
+    // Load initial video if it is visible
     if (isVisible) {
       console.log("Loading video:", src);
       video.load();
@@ -82,6 +88,7 @@ export function VideoPlayer({ src, thumbnail, isVisible }: VideoPlayerProps) {
         controls
         playsInline
         preload="auto"
+        muted // Mute the video on load
         className="h-full w-full object-cover"
       />
     </Card>
