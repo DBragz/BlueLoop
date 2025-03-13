@@ -26,14 +26,15 @@ export async function loginWithBsky(identifier: string, password: string) {
 
 export async function uploadVideo(file: File, caption: string) {
   try {
-    // In a real implementation, we would upload to a video hosting service
-    // For now, we'll just generate a temporary URL
+    // For testing purposes, using a reliable sample video URL
+    const demoVideoUrl = "https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/BigBuckBunny.mp4";
+
     const response = await fetch("/api/videos", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       credentials: 'include',
       body: JSON.stringify({
-        uri: URL.createObjectURL(file),
+        uri: demoVideoUrl,
         cid: `demo-${Date.now()}`,
         caption,
         thumbnail: null
