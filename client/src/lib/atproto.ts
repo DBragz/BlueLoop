@@ -26,16 +26,16 @@ export async function loginWithBsky(identifier: string, password: string) {
 
 export async function uploadVideo(file: File, caption: string) {
   try {
-    // Using a widely supported video format from a reliable CDN
-    const demoVideoUrl = "https://cdn.plyr.io/static/demo/View_From_A_Blue_Moon_Trailer-HD.mp4";
+    // Create a temporary URL for the uploaded file
+    const fileUrl = URL.createObjectURL(file);
 
     const response = await fetch("/api/videos", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       credentials: 'include',
       body: JSON.stringify({
-        uri: demoVideoUrl,
-        cid: `demo-${Date.now()}`,
+        uri: fileUrl,
+        cid: `video-${Date.now()}`,
         caption,
         thumbnail: null
       })
