@@ -1,6 +1,6 @@
-import { BskyAgent } from "@atproto/api";
+import { Agent } from "@atproto/api";
 
-export const agent = new BskyAgent({
+export const agent = new Agent({
   service: "https://bsky.social"
 });
 

@@ -1,7 +1,7 @@
 import type { Express, Request } from "express";
 import { createServer } from "http";
 import { storage } from "./storage";
-import { BskyAgent } from "@atproto/api";
+import { Agent } from "@atproto/api";
 import { insertUserSchema } from "@shared/schema";
 import multer from 'multer';
 
@@ -25,7 +25,7 @@ export async function registerRoutes(app: Express) {
     const { identifier, password } = req.body;
 
     try {
-      const agent = new BskyAgent({ service: "https://bsky.social" });
+      const agent = new Agent({ service: "https://bsky.social" });
       const response = await agent.login({ identifier, password });
 
       const { accessJwt, refreshJwt, did, handle } = response.data;
