@@ -26,7 +26,7 @@ export default function Home() {
         description: "Video uploaded successfully",
       });
       setDialogOpen(false);
-      window.location.reload(); // Refresh the page after upload
+      queryClient.invalidateQueries({ queryKey: ["/api/videos"] });
     } catch (error) {
       toast({
         variant: "destructive",

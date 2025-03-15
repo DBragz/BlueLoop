@@ -1,7 +1,7 @@
 import { VideoPlayer } from "./video-player";
 import { useInView } from "react-intersection-observer";
 import { useState, useEffect } from "react";
-import { useInfiniteQuery } from "@tanstack/react-query";
+import { useInfiniteQuery, useQueryClient } from "@tanstack/react-query";
 import { Button } from "@/components/ui/button";
 import {
   Dialog,
@@ -25,6 +25,7 @@ interface VideoFeedProps {
 }
 
 export function VideoFeed({ onAuthChange }: VideoFeedProps) {
+  const queryClient = useQueryClient();
   const [currentVideoIndex, setCurrentVideoIndex] = useState(0);
   const [isAuthenticated, setIsAuthenticated] = useState(false);
   const { ref, inView } = useInView({
