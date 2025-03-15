@@ -106,7 +106,7 @@ export function VideoFeed({ onAuthChange }: VideoFeedProps) {
   const [identifier, setIdentifier] = useState("");
   const [password, setPassword] = useState("");
   const [isLoading, setIsLoading] = useState(false);
-  const { toast } = useToast();
+  const { toast: showToast } = useToast();
 
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -115,7 +115,7 @@ export function VideoFeed({ onAuthChange }: VideoFeedProps) {
       await loginWithBsky(identifier, password);
       setIsAuthenticated(true);
       setShowLoginDialog(false);
-      toast({
+      showToast({
         title: "Success",
         description: "Successfully logged in",
       });
