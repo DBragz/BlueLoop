@@ -10,7 +10,6 @@ interface VideoResponse {
 
 export function VideoFeed() {
   const [currentVideoIndex, setCurrentVideoIndex] = useState(0);
-  const [, setLocation] = useLocation();
   const { ref, inView } = useInView({
     threshold: 0.5,
   });
@@ -30,10 +29,6 @@ export function VideoFeed() {
       const res = await fetch(`/api/videos?offset=${pageParam}&limit=5`, {
         credentials: 'include'
       });
-      if (res.status === 401) {
-        setLocation('/auth');
-        throw new Error("Please login to view videos");
-      }
       if (!res.ok) {
         throw new Error("Failed to fetch videos");
       }
