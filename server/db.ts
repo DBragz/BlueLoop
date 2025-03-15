@@ -12,24 +12,21 @@ if (!process.env.DATABASE_URL) {
 const startTime = Date.now();
 console.log('Initializing database connection pool...');
 
-// Configure pool with production-ready settings
+// Configure pool with better timeout and error handling
 export const pool = new Pool({ 
   connectionString: process.env.DATABASE_URL,
-  max: 10, // Reduced max connections for better stability
-  idleTimeoutMillis: 30000,
-  connectionTimeoutMillis: 10000,
-  keepAlive: true, // Enable keep-alive
-  allowExitOnIdle: false // Prevent immediate exit on idle
+  max: 20, // Increase max connections
+  idleTimeoutMillis: 30000, // Reduce idle timeout
+  connectionTimeoutMillis: 5000, // Add connection timeout
 });
 
 export const db = drizzle(pool, { schema });
 
-// Initialize database with retries and better error handling
-async function initializeDatabase(retries = 5, retryDelay = 2000) {
+// Test the connection on module load with retry logic
+async function initializeDatabase(retries = 3) {
   for (let i = 0; i < retries; i++) {
     try {
-      const client = await pool.connect();
-      client.release(); // Important: release the client back to the pool
+      await pool.connect();
       const duration = Date.now() - startTime;
       console.log(`Database connection pool initialized successfully (took ${duration}ms)`);
       return;
@@ -38,47 +35,33 @@ async function initializeDatabase(retries = 5, retryDelay = 2000) {
       if (i === retries - 1) {
         throw err;
       }
-      await new Promise(resolve => setTimeout(resolve, retryDelay));
+      // Wait before retrying
+      await new Promise(resolve => setTimeout(resolve, 1000));
     }
   }
 }
 
-// Handle database initialization
 initializeDatabase().catch(err => {
   console.error('Failed to initialize database after retries:', err);
   console.error('Connection error stack:', err.stack);
   process.exit(1);
 });
 
-// Improved error handling with automatic reconnection
-pool.on('error', async (err) => {
+// Add connection error handler with reconnection logic
+pool.on('error', (err) => {
   console.error('Unexpected database pool error:', err);
   console.error('Pool error stack:', err.stack);
-
+  // Try to clean up and reconnect
   try {
-    console.log('Attempting to recover database connection...');
-    await pool.end();
-    await initializeDatabase();
-    console.log('Database connection recovered successfully');
-  } catch (reconnectErr) {
-    console.error('Failed to recover database connection:', reconnectErr);
-    // In production, we want to exit and let the process manager restart us
-    if (process.env.NODE_ENV === 'production') {
-      console.error('Critical database error in production, exiting process...');
-      process.exit(1);
-    }
-  }
-});
-
-// Handle graceful shutdown
-process.on('SIGTERM', async () => {
-  console.log('Received SIGTERM signal, initiating graceful shutdown...');
-  try {
-    await pool.end();
-    console.log('Database pool closed successfully');
-    process.exit(0);
-  } catch (err) {
-    console.error('Error during graceful shutdown:', err);
+    pool.end();
+    initializeDatabase()
+      .then(() => console.log('Database reconnected after error'))
+      .catch(reconnectErr => {
+        console.error('Failed to reconnect to database:', reconnectErr);
+        process.exit(1);
+      });
+  } catch (cleanupErr) {
+    console.error('Failed to cleanup pool:', cleanupErr);
     process.exit(1);
   }
 });
