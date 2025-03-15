@@ -43,7 +43,8 @@ async function testConnection(maxRetries = 3, initialDelay = 1000) {
 
     if (client) {
       try {
-        await client.query('SELECT 1'); // Verify connection works
+        // Use a simple SELECT 1 instead of selecting from tables
+        await client.query('SELECT 1 AS connection_test');
         const duration = Date.now() - startTime;
         console.log(`Database connection verified (took ${duration}ms)`);
         return true;
