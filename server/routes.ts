@@ -40,8 +40,18 @@ export async function registerRoutes(app: Express) {
       };
 
       const validatedUser = insertUserSchema.parse(userData);
-      const user = await storage.createUser(validatedUser);
+      
+      // Check for existing user
+      const existingUser = await storage.getUserByDid(did);
+      if (existingUser) {
+        // Update existing user with new tokens
+        await storage.updateUserTokens(existingUser.id, accessJwt, refreshJwt);
+        res.json({ user: existingUser });
+        return;
+      }
 
+      // Create new user if none exists
+      const user = await storage.createUser(validatedUser);
       res.json({ user });
     } catch (error) {
       console.error("Login error:", error);
