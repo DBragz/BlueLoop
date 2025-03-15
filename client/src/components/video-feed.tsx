@@ -30,6 +30,16 @@ export function VideoFeed({ onAuthChange }: VideoFeedProps) {
   const { ref, inView } = useInView({
     threshold: 0.5,
   });
+  const { toast } = useToast();
+
+  const handleLogout = () => {
+    setIsAuthenticated(false);
+    onAuthChange?.(false);
+    toast({
+      title: "Success",
+      description: "Successfully logged out",
+    });
+  };
 
   const { data, fetchNextPage, hasNextPage, isFetching, isError, error } =
     useInfiniteQuery<VideoResponse>({
@@ -187,7 +197,13 @@ export function VideoFeed({ onAuthChange }: VideoFeedProps) {
   }
 
   return (
-    <div className="snap-y snap-mandatory h-screen overflow-y-scroll">
+    <>
+      <div className="fixed top-4 right-4 z-50">
+        <Button onClick={handleLogout} variant="outline">
+          Logout
+        </Button>
+      </div>
+      <div className="snap-y snap-mandatory h-screen overflow-y-scroll">
       {allVideos.map((video: Video, index: number) => (
         <div
           key={video.id}
@@ -213,5 +229,6 @@ export function VideoFeed({ onAuthChange }: VideoFeedProps) {
         </div>
       )}
     </div>
+    </>
   );
 }
