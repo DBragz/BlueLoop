@@ -1,7 +1,8 @@
-import { useInfiniteQuery } from "@tanstack/react-query";
+
 import { VideoPlayer } from "./video-player";
 import { useInView } from "react-intersection-observer";
 import { useState, useEffect } from "react";
+import { useInfiniteQuery } from "@tanstack/react-query";
 import type { Video } from "@shared/schema";
 
 interface VideoResponse {
@@ -10,6 +11,7 @@ interface VideoResponse {
 
 export function VideoFeed() {
   const [currentVideoIndex, setCurrentVideoIndex] = useState(0);
+  const [isAuthenticated, setIsAuthenticated] = useState(false);
   const { ref, inView } = useInView({
     threshold: 0.5,
   });
@@ -23,12 +25,17 @@ export function VideoFeed() {
     error
   } = useInfiniteQuery<VideoResponse>({
     queryKey: ["/api/videos"],
+    enabled: isAuthenticated,
     initialPageParam: 0,
     queryFn: async ({ pageParam }) => {
       console.log("Fetching videos with offset:", pageParam);
       const res = await fetch(`/api/videos?offset=${pageParam}&limit=5`, {
         credentials: 'include'
       });
+      if (res.status === 401) {
+        setIsAuthenticated(false);
+        throw new Error("Please login to view videos");
+      }
       if (!res.ok) {
         throw new Error("Failed to fetch videos");
       }
@@ -71,6 +78,20 @@ export function VideoFeed() {
       videos.forEach((video) => observer.unobserve(video));
     };
   }, [data?.pages]);
+
+  if (!isAuthenticated) {
+    return (
+      <div className="flex flex-col items-center justify-center h-screen space-y-4">
+        <p className="text-lg">Please login to view videos</p>
+        <div>
+          <script
+            authed="window.location.reload()"
+            src="https://auth.util.repl.co/script.js"
+          ></script>
+        </div>
+      </div>
+    );
+  }
 
   if (isError) {
     return (
