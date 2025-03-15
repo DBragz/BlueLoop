@@ -6,8 +6,10 @@ import { useState } from "react";
 import { Input } from "@/components/ui/input";
 import { uploadVideo } from "@/lib/atproto";
 import { useToast } from "@/hooks/use-toast";
+import { useQueryClient } from "@tanstack/react-query";
 
 export default function Home() {
+  const queryClient = useQueryClient();
   const [isUploading, setIsUploading] = useState(false);
   const [videoFile, setVideoFile] = useState<File | null>(null);
   const [caption, setCaption] = useState("");
@@ -21,12 +23,14 @@ export default function Home() {
     setIsUploading(true);
     try {
       await uploadVideo(videoFile, caption);
+      await queryClient.invalidateQueries({ queryKey: ["/api/videos"] });
+      setDialogOpen(false);
+      setVideoFile(null);
+      setCaption("");
       toast({
         title: "Success",
         description: "Video uploaded successfully",
       });
-      setDialogOpen(false);
-      queryClient.invalidateQueries({ queryKey: ["/api/videos"] });
     } catch (error) {
       toast({
         variant: "destructive",
