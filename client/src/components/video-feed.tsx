@@ -3,6 +3,11 @@ import { VideoPlayer } from "./video-player";
 import { useInView } from "react-intersection-observer";
 import { useState, useEffect } from "react";
 import { useInfiniteQuery } from "@tanstack/react-query";
+import { Button } from "@/components/ui/button";
+import { Dialog, DialogContent, DialogHeader, DialogFooter, DialogTitle, DialogDescription } from "@/components/ui/dialog";
+import { Input } from "@/components/ui/input";
+import { useToast } from "@/hooks/use-toast";
+import { loginWithBsky } from "@/lib/atproto";
 import type { Video } from "@shared/schema";
 
 interface VideoResponse {
@@ -87,17 +92,78 @@ export function VideoFeed({ onAuthChange }: VideoFeedProps) {
     };
   }, [data?.pages]);
 
+  const [showLoginDialog, setShowLoginDialog] = useState(false);
+  const [identifier, setIdentifier] = useState("");
+  const [password, setPassword] = useState("");
+  const [isLoading, setIsLoading] = useState(false);
+  const { toast } = useToast();
+
+  const handleLogin = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setIsLoading(true);
+    try {
+      await loginWithBsky(identifier, password);
+      setIsAuthenticated(true);
+      setShowLoginDialog(false);
+      toast({
+        title: "Success",
+        description: "Successfully logged in",
+      });
+    } catch (error) {
+      toast({
+        variant: "destructive",
+        title: "Error",
+        description: "Failed to login",
+      });
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
   if (!isAuthenticated) {
     return (
-      <div className="flex flex-col items-center justify-center h-screen space-y-4">
-        <p className="text-lg">Please login to view videos</p>
-        <div>
-          <script
-            authed="window.location.reload()"
-            src="https://auth.util.repl.co/script.js"
-          ></script>
+      <>
+        <div className="flex flex-col items-center justify-center h-screen space-y-4">
+          <p className="text-lg">Please login to view videos</p>
+          <Button onClick={() => setShowLoginDialog(true)}>Login</Button>
         </div>
-      </div>
+
+        <Dialog open={showLoginDialog} onOpenChange={setShowLoginDialog}>
+          <DialogContent>
+            <DialogHeader>
+              <DialogTitle>Sign in with Bluesky</DialogTitle>
+              <DialogDescription>
+                Enter your Bluesky credentials to continue
+              </DialogDescription>
+            </DialogHeader>
+            <form onSubmit={handleLogin} className="space-y-4">
+              <div className="space-y-2">
+                <Input
+                  type="text"
+                  placeholder="handle.bsky.social"
+                  value={identifier}
+                  onChange={(e) => setIdentifier(e.target.value)}
+                  disabled={isLoading}
+                />
+              </div>
+              <div className="space-y-2">
+                <Input
+                  type="password"
+                  placeholder="Password"
+                  value={password}
+                  onChange={(e) => setPassword(e.target.value)}
+                  disabled={isLoading}
+                />
+              </div>
+              <DialogFooter>
+                <Button type="submit" disabled={isLoading}>
+                  {isLoading ? "Signing in..." : "Sign in"}
+                </Button>
+              </DialogFooter>
+            </form>
+          </DialogContent>
+        </Dialog>
+      </>
     );
   }
 
