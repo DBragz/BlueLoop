@@ -25,7 +25,7 @@ export default function Home() {
         title: "Success",
         description: "Video uploaded successfully",
       });
-      setDialogOpen(false); // Close the dialog after upload
+      setDialogOpen(false);
       window.location.reload(); // Refresh the page after upload
     } catch (error) {
       toast({
