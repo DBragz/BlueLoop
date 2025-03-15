@@ -44,6 +44,7 @@ export default function Home() {
       title: "Success",
       description: "Successfully logged out",
     });
+    window.location.reload();
   };
 
   return (
