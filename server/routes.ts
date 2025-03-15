@@ -21,10 +21,19 @@ interface MulterRequest extends Request {
 export async function registerRoutes(app: Express) {
   const httpServer = createServer(app);
 
+  // Update the login route with better error handling and connection checks
   app.post("/api/auth/login", async (req, res) => {
     const { identifier, password } = req.body;
 
     try {
+      // First verify database connection
+      try {
+        await storage.getUser(1); // Test query
+      } catch (dbError) {
+        console.error("Database connection error:", dbError);
+        return res.status(500).json({ message: "Database connection error" });
+      }
+
       const agent = new BskyAgent({ service: "https://bsky.social" });
       const response = await agent.login({ identifier, password });
 
@@ -40,22 +49,29 @@ export async function registerRoutes(app: Express) {
       };
 
       const validatedUser = insertUserSchema.parse(userData);
-      
-      // Check for existing user
-      const existingUser = await storage.getUserByDid(did);
-      if (existingUser) {
-        // Update existing user with new tokens
-        await storage.updateUserTokens(existingUser.id, accessJwt, refreshJwt);
-        res.json({ user: existingUser });
-        return;
+
+      // Check for existing user with better error handling
+      let user;
+      try {
+        const existingUser = await storage.getUserByDid(did);
+        if (existingUser) {
+          // Update existing user with new tokens
+          await storage.updateUserTokens(existingUser.id, accessJwt, refreshJwt);
+          user = existingUser;
+        } else {
+          // Create new user if none exists
+          user = await storage.createUser(validatedUser);
+        }
+      } catch (storageError) {
+        console.error("Storage operation error:", storageError);
+        return res.status(500).json({ message: "Failed to process user data" });
       }
 
-      // Create new user if none exists
-      const user = await storage.createUser(validatedUser);
       res.json({ user });
     } catch (error) {
       console.error("Login error:", error);
-      res.status(401).json({ message: "Authentication failed" });
+      const errorMessage = error instanceof Error ? error.message : "Authentication failed";
+      res.status(401).json({ message: errorMessage });
     }
   });
 
