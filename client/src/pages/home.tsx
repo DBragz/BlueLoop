@@ -43,12 +43,13 @@ export default function Home() {
   };
 
   const handleLogout = () => {
+    localStorage.removeItem('isAuthenticated');
     setIsAuthenticated(false);
     toast({
       title: "Success",
       description: "Successfully logged out",
     });
-    window.location.reload();
+    queryClient.invalidateQueries({ queryKey: ["/api/videos"] });
   };
 
   return (

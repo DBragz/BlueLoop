@@ -27,7 +27,9 @@ interface VideoFeedProps {
 export function VideoFeed({ onAuthChange }: VideoFeedProps) {
   const queryClient = useQueryClient();
   const [currentVideoIndex, setCurrentVideoIndex] = useState(0);
-  const [isAuthenticated, setIsAuthenticated] = useState(false);
+  const [isAuthenticated, setIsAuthenticated] = useState(() => {
+    return localStorage.getItem('isAuthenticated') === 'true';
+  });
   const { ref, inView } = useInView({
     threshold: 0.5,
   });
@@ -105,6 +107,7 @@ export function VideoFeed({ onAuthChange }: VideoFeedProps) {
     setIsLoading(true);
     try {
       await loginWithBsky(identifier, password);
+      localStorage.setItem('isAuthenticated', 'true');
       setIsAuthenticated(true);
       setShowLoginDialog(false);
       showToast({
