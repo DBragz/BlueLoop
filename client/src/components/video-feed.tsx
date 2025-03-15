@@ -1,10 +1,16 @@
-
 import { VideoPlayer } from "./video-player";
 import { useInView } from "react-intersection-observer";
 import { useState, useEffect } from "react";
 import { useInfiniteQuery } from "@tanstack/react-query";
 import { Button } from "@/components/ui/button";
-import { Dialog, DialogContent, DialogHeader, DialogFooter, DialogTitle, DialogDescription } from "@/components/ui/dialog";
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogFooter,
+  DialogTitle,
+  DialogDescription,
+} from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import { useToast } from "@/hooks/use-toast";
 import { loginWithBsky } from "@/lib/atproto";
@@ -25,42 +31,36 @@ export function VideoFeed({ onAuthChange }: VideoFeedProps) {
     threshold: 0.5,
   });
 
-  const { 
-    data,
-    fetchNextPage,
-    hasNextPage,
-    isFetching,
-    isError,
-    error
-  } = useInfiniteQuery<VideoResponse>({
-    queryKey: ["/api/videos"],
-    enabled: isAuthenticated,
-    initialPageParam: 0,
-    queryFn: async ({ pageParam }) => {
-      console.log("Fetching videos with offset:", pageParam);
-      const res = await fetch(`/api/videos?offset=${pageParam}&limit=5`, {
-        credentials: 'include'
-      });
-      if (res.status === 401) {
-        setIsAuthenticated(false);
-        onAuthChange?.(false);
-        throw new Error("Please login to view videos");
-      } else {
-        setIsAuthenticated(true);
-        onAuthChange?.(true);
-      }
-      if (!res.ok) {
-        throw new Error("Failed to fetch videos");
-      }
-      const data = await res.json();
-      console.log("Fetched videos:", data);
-      return data;
-    },
-    getNextPageParam: (lastPage, pages) => {
-      if (!lastPage?.videos?.length) return undefined;
-      return lastPage.videos.length === 5 ? pages.length * 5 : undefined;
-    },
-  });
+  const { data, fetchNextPage, hasNextPage, isFetching, isError, error } =
+    useInfiniteQuery<VideoResponse>({
+      queryKey: ["/api/videos"],
+      enabled: isAuthenticated,
+      initialPageParam: 0,
+      queryFn: async ({ pageParam }) => {
+        console.log("Fetching videos with offset:", pageParam);
+        const res = await fetch(`/api/videos?offset=${pageParam}&limit=5`, {
+          credentials: "include",
+        });
+        if (res.status === 401) {
+          setIsAuthenticated(false);
+          onAuthChange?.(false);
+          throw new Error("Please login to view videos");
+        } else {
+          setIsAuthenticated(true);
+          onAuthChange?.(true);
+        }
+        if (!res.ok) {
+          throw new Error("Failed to fetch videos");
+        }
+        const data = await res.json();
+        console.log("Fetched videos:", data);
+        return data;
+      },
+      getNextPageParam: (lastPage, pages) => {
+        if (!lastPage?.videos?.length) return undefined;
+        return lastPage.videos.length === 5 ? pages.length * 5 : undefined;
+      },
+    });
 
   useEffect(() => {
     if (inView && hasNextPage && !isFetching) {
@@ -73,7 +73,7 @@ export function VideoFeed({ onAuthChange }: VideoFeedProps) {
       (entries) => {
         entries.forEach((entry) => {
           if (entry.isIntersecting) {
-            const index = Number(entry.target.getAttribute('data-index'));
+            const index = Number(entry.target.getAttribute("data-index"));
             if (!isNaN(index)) {
               setCurrentVideoIndex(index);
               console.log("Video in view:", index);
@@ -81,10 +81,10 @@ export function VideoFeed({ onAuthChange }: VideoFeedProps) {
           }
         });
       },
-      { threshold: 0.7 }
+      { threshold: 0.7 },
     );
 
-    const videos = document.querySelectorAll('.video-container');
+    const videos = document.querySelectorAll(".video-container");
     videos.forEach((video) => observer.observe(video));
 
     return () => {
@@ -124,7 +124,6 @@ export function VideoFeed({ onAuthChange }: VideoFeedProps) {
     return (
       <>
         <div className="flex flex-col items-center justify-center h-screen space-y-4">
-          <p className="text-lg">Please login to view videos</p>
           <Button onClick={() => setShowLoginDialog(true)}>Login</Button>
         </div>
 
@@ -170,12 +169,14 @@ export function VideoFeed({ onAuthChange }: VideoFeedProps) {
   if (isError) {
     return (
       <div className="flex items-center justify-center h-screen">
-        <p className="text-destructive">Error loading videos: {error.message}</p>
+        <p className="text-destructive">
+          Error loading videos: {error.message}
+        </p>
       </div>
     );
   }
 
-  const allVideos = data?.pages.flatMap(page => page.videos) ?? [];
+  const allVideos = data?.pages.flatMap((page) => page.videos) ?? [];
 
   if (allVideos.length === 0) {
     return (
@@ -197,7 +198,10 @@ export function VideoFeed({ onAuthChange }: VideoFeedProps) {
           <div className="w-full max-w-md mx-auto relative">
             <VideoPlayer
               src={video.uri}
-              thumbnail={video.thumbnail || "https://images.unsplash.com/photo-1611162616475-46b635cb6868"}
+              thumbnail={
+                video.thumbnail ||
+                "https://images.unsplash.com/photo-1611162616475-46b635cb6868"
+              }
               isVisible={currentVideoIndex === index}
             />
           </div>
