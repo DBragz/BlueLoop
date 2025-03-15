@@ -4,7 +4,6 @@ import { storage } from "./storage";
 import { Agent } from "@atproto/api";
 import { insertUserSchema } from "@shared/schema";
 import multer from 'multer';
-import { requireAuth } from './middleware';
 
 // Configure multer for memory storage with increased size limit
 const upload = multer({ 
@@ -50,7 +49,7 @@ export async function registerRoutes(app: Express) {
     }
   });
 
-  app.get("/api/videos", requireAuth, async (req, res) => {
+  app.get("/api/videos", async (req, res) => {
     try {
       const offset = parseInt(req.query.offset as string) || 0;
       const limit = parseInt(req.query.limit as string) || 5;
