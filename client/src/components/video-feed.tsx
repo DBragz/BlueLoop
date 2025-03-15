@@ -198,8 +198,8 @@ export function VideoFeed({ onAuthChange }: VideoFeedProps) {
 
   return (
     <div className="relative">
-      <div className="fixed top-4 right-4 z-[100]">
-        <Button onClick={handleLogout} variant="outline" className="font-semibold bg-background">
+      <div className="fixed bottom-4 right-4 z-50">
+        <Button onClick={handleLogout} size="icon" className="rounded-full h-14 w-14">
           Logout
         </Button>
       </div>
