@@ -2,6 +2,7 @@ import { useInfiniteQuery } from "@tanstack/react-query";
 import { VideoPlayer } from "./video-player";
 import { useInView } from "react-intersection-observer";
 import { useState, useEffect } from "react";
+import { useLocation, useNavigate } from 'react-router-dom'; // Added import for useNavigate
 import type { Video } from "@shared/schema";
 
 interface VideoResponse {
@@ -13,6 +14,8 @@ export function VideoFeed() {
   const { ref, inView } = useInView({
     threshold: 0.5,
   });
+  const location = useLocation();
+  const navigate = useNavigate(); // Added useNavigate hook
 
   const { 
     data,
@@ -29,6 +32,10 @@ export function VideoFeed() {
       const res = await fetch(`/api/videos?offset=${pageParam}&limit=5`, {
         credentials: 'include'
       });
+      if (res.status === 401) {
+        navigate('/auth'); // Redirect to auth page if unauthorized
+        return []; // Return empty array to prevent rendering errors
+      }
       if (!res.ok) {
         throw new Error("Failed to fetch videos");
       }
