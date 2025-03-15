@@ -50,6 +50,7 @@ export default function Home() {
       description: "Successfully logged out",
     });
     queryClient.invalidateQueries({ queryKey: ["/api/videos"] });
+    window.location.reload();
   };
 
   return (
