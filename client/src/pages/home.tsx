@@ -38,8 +38,23 @@ export default function Home() {
     }
   };
 
+  const handleLogout = () => {
+    setIsAuthenticated(false);
+    toast({
+      title: "Success",
+      description: "Successfully logged out",
+    });
+  };
+
   return (
     <div className="min-h-screen bg-background">
+      {isAuthenticated && (
+        <div className="fixed top-4 right-4 z-50">
+          <Button onClick={handleLogout} variant="outline">
+            Logout
+          </Button>
+        </div>
+      )}
       {isAuthenticated && (
         <div className="fixed bottom-4 right-4 z-50">
           <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
