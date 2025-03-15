@@ -9,7 +9,11 @@ interface VideoResponse {
   videos: Video[];
 }
 
-export function VideoFeed() {
+interface VideoFeedProps {
+  onAuthChange?: (isAuthenticated: boolean) => void;
+}
+
+export function VideoFeed({ onAuthChange }: VideoFeedProps) {
   const [currentVideoIndex, setCurrentVideoIndex] = useState(0);
   const [isAuthenticated, setIsAuthenticated] = useState(false);
   const { ref, inView } = useInView({
@@ -34,7 +38,11 @@ export function VideoFeed() {
       });
       if (res.status === 401) {
         setIsAuthenticated(false);
+        onAuthChange?.(false);
         throw new Error("Please login to view videos");
+      } else {
+        setIsAuthenticated(true);
+        onAuthChange?.(true);
       }
       if (!res.ok) {
         throw new Error("Failed to fetch videos");

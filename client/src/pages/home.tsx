@@ -12,6 +12,7 @@ export default function Home() {
   const [videoFile, setVideoFile] = useState<File | null>(null);
   const [caption, setCaption] = useState("");
   const [dialogOpen, setDialogOpen] = useState(false);
+  const [isAuthenticated, setIsAuthenticated] = useState(false);
   const { toast } = useToast();
 
   const handleUpload = async () => {
@@ -39,8 +40,9 @@ export default function Home() {
 
   return (
     <div className="min-h-screen bg-background">
-      <div className="fixed bottom-4 right-4 z-50">
-        <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
+      {isAuthenticated && (
+        <div className="fixed bottom-4 right-4 z-50">
+          <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
           <DialogTrigger asChild>
             <Button size="icon" className="rounded-full h-14 w-14">
               <Plus className="h-6 w-6" />
@@ -70,7 +72,8 @@ export default function Home() {
           </DialogContent>
         </Dialog>
       </div>
-      <VideoFeed />
+      )}
+      <VideoFeed onAuthChange={setIsAuthenticated} />
     </div>
   );
 }
