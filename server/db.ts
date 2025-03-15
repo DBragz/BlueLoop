@@ -3,8 +3,11 @@ import { drizzle } from 'drizzle-orm/neon-serverless';
 import ws from "ws";
 import * as schema from "@shared/schema";
 
+// Configure WebSocket for Neon - MUST be done before creating pool
 neonConfig.webSocketConstructor = ws;
+neonConfig.pipelineConnect = false; // Important: Disable pipelining for production stability
 
+// Early validation of DATABASE_URL
 if (!process.env.DATABASE_URL) {
   throw new Error("DATABASE_URL must be set. Did you forget to provision a database?");
 }
@@ -12,56 +15,92 @@ if (!process.env.DATABASE_URL) {
 const startTime = Date.now();
 console.log('Initializing database connection pool...');
 
-// Configure pool with better timeout and error handling
-export const pool = new Pool({ 
+// Configure pool with production-optimized settings
+export const pool = new Pool({
   connectionString: process.env.DATABASE_URL,
-  max: 20, // Increase max connections
-  idleTimeoutMillis: 30000, // Reduce idle timeout
-  connectionTimeoutMillis: 5000, // Add connection timeout
+  connectionTimeoutMillis: 10000, // 10 second timeout
+  max: 1, // Single connection for serverless
+  idleTimeoutMillis: 20000, // Release idle connections after 20 seconds
+  maxUses: 10000, // Recycle connection after 10000 queries
+  keepAlive: true // Enable keepalive
 });
 
 export const db = drizzle(pool, { schema });
 
-// Test the connection on module load with retry logic
-async function initializeDatabase(retries = 3) {
-  for (let i = 0; i < retries; i++) {
-    try {
-      await pool.connect();
-      const duration = Date.now() - startTime;
-      console.log(`Database connection pool initialized successfully (took ${duration}ms)`);
-      return;
-    } catch (err) {
-      console.error(`Failed to initialize database pool (attempt ${i + 1}/${retries}):`, err);
-      if (i === retries - 1) {
-        throw err;
+// Helper: Sleep function for retry delays
+const sleep = (ms: number) => new Promise(resolve => setTimeout(resolve, ms));
+
+// Test connection with exponential backoff
+async function testConnection(maxRetries = 3, initialDelay = 1000) {
+  let retryCount = 0;
+  let lastError;
+
+  while (retryCount < maxRetries) {
+    const client = await pool.connect().catch(e => {
+      console.error(`Connection attempt ${retryCount + 1} failed:`, e);
+      return null;
+    });
+
+    if (client) {
+      try {
+        await client.query('SELECT 1'); // Verify connection works
+        const duration = Date.now() - startTime;
+        console.log(`Database connection verified (took ${duration}ms)`);
+        return true;
+      } catch (error) {
+        lastError = error;
+        console.error(`Query test failed on attempt ${retryCount + 1}:`, error);
+      } finally {
+        client.release();
       }
-      // Wait before retrying
-      await new Promise(resolve => setTimeout(resolve, 1000));
+    }
+
+    retryCount++;
+    if (retryCount < maxRetries) {
+      const delay = initialDelay * Math.pow(2, retryCount - 1);
+      console.log(`Waiting ${delay}ms before retry ${retryCount + 1}...`);
+      await sleep(delay);
     }
   }
+
+  throw lastError || new Error('Failed to establish database connection');
 }
 
-initializeDatabase().catch(err => {
-  console.error('Failed to initialize database after retries:', err);
-  console.error('Connection error stack:', err.stack);
-  process.exit(1);
+// Initialize database connection
+testConnection()
+  .catch(err => {
+    console.error('Fatal: Failed to initialize database connection:', err);
+    process.exit(1);
+  });
+
+// Handle pool errors
+pool.on('error', async (err, client) => {
+  console.error('Unexpected error on idle client:', err);
+  if (client) {
+    client.release(true); // Force release with error
+  }
 });
 
-// Add connection error handler with reconnection logic
-pool.on('error', (err) => {
-  console.error('Unexpected database pool error:', err);
-  console.error('Pool error stack:', err.stack);
-  // Try to clean up and reconnect
+// Cleanup handler
+process.on('SIGTERM', async () => {
+  console.log('Received SIGTERM, closing pool...');
   try {
-    pool.end();
-    initializeDatabase()
-      .then(() => console.log('Database reconnected after error'))
-      .catch(reconnectErr => {
-        console.error('Failed to reconnect to database:', reconnectErr);
-        process.exit(1);
-      });
-  } catch (cleanupErr) {
-    console.error('Failed to cleanup pool:', cleanupErr);
+    await pool.end();
+    console.log('Pool has been closed');
+  } catch (err) {
+    console.error('Error closing pool:', err);
     process.exit(1);
   }
+  process.exit(0);
+});
+
+// Additional error handlers
+process.on('unhandledRejection', (reason, promise) => {
+  console.error('Unhandled Rejection at:', promise, 'reason:', reason);
+});
+
+process.on('uncaughtException', (error) => {
+  console.error('Uncaught Exception:', error);
+  // Attempt graceful shutdown
+  pool.end().finally(() => process.exit(1));
 });
