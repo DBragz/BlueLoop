@@ -50,6 +50,57 @@ Before you begin, ensure you have the following installed:
    npm run db:push
    ```
 
+## Docker Development Setup
+
+To run the application in a Docker development environment:
+
+1. Make sure you have Docker and Docker Compose installed on your system.
+
+2. Clone the repository:
+   ```bash
+   git clone https://github.com/DBragz/BlueLoop.git
+   cd BlueLoop
+   ```
+
+3. Build and start the containers:
+   ```bash
+   docker-compose up --build
+   ```
+
+4. The application will be available at:
+   - Frontend: http://localhost:5000
+   - Database: PostgreSQL running on localhost:5432
+
+5. To stop the containers:
+   ```bash
+   docker-compose down
+   ```
+
+6. To view logs:
+   ```bash
+   docker-compose logs -f
+   ```
+
+### Database Management
+
+- Connect to the database:
+  ```bash
+  docker-compose exec db psql -U postgres -d blueloop
+  ```
+
+- Reset the database:
+  ```bash
+  docker-compose down -v  # This will remove the volume
+  docker-compose up      # This will recreate everything
+  ```
+
+### Development Notes
+
+- The application code is mounted as a volume, so changes will reflect immediately
+- Node modules are in a separate volume to prevent overwriting the container's modules
+- Hot reloading is enabled for development
+
+
 ## Development
 
 To run the application in development mode:
