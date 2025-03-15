@@ -154,11 +154,11 @@ The application will be available at `http://localhost:5000`.
 
 1. Prepare for Production
    ```bash
-   # Install dependencies (no dev dependencies)
-   npm install --production
+   # Build the production Docker image
+   docker-compose -f docker-compose.prod.yml build
 
-   # Build the application
-   npm run build
+   # Start the production containers
+   docker-compose -f docker-compose.prod.yml up -d
    ```
 
 2. Database Setup
@@ -169,19 +169,6 @@ The application will be available at `http://localhost:5000`.
    # Verify database connection
    NODE_ENV=production npm run check
    ```
-
-3. Start the Production Server
-   ```bash
-   # Start the server
-   npm run start
-   ```
-
-### Deployment on Replit
-
-1. Fork the repository on Replit
-2. Configure environment variables in Replit's Secrets tab
-3. Click on "Deploy" in your Replit workspace
-4. Your application will be available at `your-app-name.username.repl.co`
 
 ### Scaling Considerations
 
@@ -197,6 +184,23 @@ The application will be available at `http://localhost:5000`.
    - Optimize static asset delivery
    - Consider using CDN for media content
 
+### Monitoring and Maintenance
+
+The application includes detailed logging for:
+- Server startup performance metrics
+- Database connection status
+- API request/response timing
+- Error tracking with stack traces
+
+Monitor these logs through:
+```bash
+# View container logs
+docker-compose -f docker-compose.prod.yml logs -f
+
+# Check container health
+docker-compose -f docker-compose.prod.yml ps
+```
+
 ### Backup and Recovery
 
 1. Database Backups
@@ -209,19 +213,6 @@ The application will be available at `http://localhost:5000`.
    - Version control all configurations
    - Maintain deployment history
    - Document rollback procedures
-
-### Monitoring and Maintenance
-
-The application includes detailed logging for:
-- Server startup performance metrics
-- Database connection status
-- API request/response timing
-- Error tracking with stack traces
-
-Monitor these logs through:
-- Replit's console for deployed applications
-- Application logs in `npm run start` output
-- Database logs in your database provider's dashboard
 
 ### Troubleshooting Production Issues
 
