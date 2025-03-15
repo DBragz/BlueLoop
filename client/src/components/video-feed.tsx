@@ -198,11 +198,13 @@ export function VideoFeed({ onAuthChange }: VideoFeedProps) {
 
   return (
     <>
-      <div className="fixed top-4 right-4 z-50">
-        <Button onClick={handleLogout} variant="outline" className="font-semibold">
-          Logout
-        </Button>
-      </div>
+      {isAuthenticated && (
+        <div className="fixed top-4 right-4 z-50">
+          <Button onClick={handleLogout} variant="outline" className="font-semibold">
+            Logout
+          </Button>
+        </div>
+      )}
       <div className="snap-y snap-mandatory h-screen overflow-y-scroll">
       {allVideos.map((video: Video, index: number) => (
         <div
